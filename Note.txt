@@ -1,0 +1,177 @@
+Day 2:
+	under layout
+		add navbar and child
+
+	under navbar
+		create container
+			add logo, search and usermenu in the container
+		under search
+			add three component "anywhere, any week and add guest" then search icon next to it
+		under usermenu
+			create MenuItem (similar to dropdown), add avatar logo, 
+				under MenuItem -> onClick and Label -> Add Login and Signup 
+	under ClientOnly
+		due to hydration issue, ClientOnly is used to wrap the navbar under layout to prevent hydration
+
+Day 3: 
+npm install react-icons
+	Under component create Modals.tsx
+		crate actions and Button.tsx
+
+Day 4: 
+npm install zustand
+npm install axios
+npm install react-hook-form
+	under components create useRegisterModal.ts
+	under registerModal create Hook using zustand
+		registerModal is used to wrap Modal as registration form
+		then create Heading.tsx and Input.tsx
+	under components create Input.tsx
+		use for input box
+npm install react-hot-toast
+	under apps create ToasterProvider.tsx
+	Add footer button to register modal and add {footer} to modal 
+	Complete registerModal and all component
+SUMMARY: ***Modal.tsx is the UI of Registration form and RegisterModal.tsx is the script for interaction including onSubmit, BodyContent, FooterContent, onClose
+	
+Day 5: Setup registration database and components
+install prisma and mongoDB
+npm install -D prisma
+npx prisma init
+	edit prisma schema and add all model required "User", "Account", "Listing"
+npx prisma db push
+	Push the db collection to mongodb via prisma
+		*set mongoDB Ip whitelist to be 0.0.0.0/0 for production mode to allowist all IP
+		*ensure the network connection is not blocked such as public wifi
+npm install next-auth @prisma/client @next-auth/prisma-adapter
+npm install bcrypt
+npm install -D @types/bcrypt
+	under app/libs create prismadb.ts (to ensure hot reloading of next.js. allow one 			instances of prismaCLient created)
+	under pages/api/auth create [...nextauth].js for authetication component
+	under app/api/register create route.ts 
+SUMMARY: 	***prismadb is create instance of db and prevent hotloading***
+
+Day 6: Login functionality
+	Duplicate RegisterModal and UseRegisterModal to LoginModal and UseLoginModal
+		Edit submit function using signIn import from next-auth/react. Using Next13 authenticate with server componenet
+	Create getCurrentUser.ts to confirm the authentication on server side
+		pass it to layout.tsx(which is a server side, or it can directly call in layout without creating getCurrentUser.ts, but to make code nicer we separate)
+		getCurrentUser instance is pass to Navbar then to UserMenu
+			when getCurrentUser instance is true, the UserMenu will changed different view ["my trips", "my properties", "airbnb my home", "settings", "logout", etc...]
+			set logout button using signOut from next.auth/react
+			hydration occurs as dateTime object is not able pass to client component from server component, thus fix it by changing it to string via .toISOString and create app/types/index.ts
+
+**next enables social logins**
+		
+Day 7: Social Login and Listing Functionality
+	Social Login via github or google
+		Go to github developer setting and google api to acquire OAuth ID and Secret and cast it to [...nextauth.js] via .env
+		update signIn to Github/Google button under RegisterModal and LoginModal
+		applied github/google avatar image as CurrentUser?.image and update Avatar.tsx and next.config.js for github/google routing
+	Listing Functionality
+		create Categories.tsx under navbar to create search icon based on category
+		create categorybox.tsx, a modal for categories 
+npm install query-string
+	
+Day 8: Listing Creation part 1
+enum STEPS {
+  CATEGORY = 0,
+  LOCATION = 1,
+  INFO = 2,
+  IMAGES = 3,
+  DESCRIPTION = 4,
+  PRICE = 5
+}
+	Step 1. Create RentModal to opt users input their home for airbnb rent based on steps. First is category with multiple selection of button to select the category.
+		create category input to allow user input their details of rent homes. Update click button on navbar to redirect RentModal
+	step 2. Location (create useCountries.ts and CountrySelect.tsx)
+npm install world-countries
+npm install react-select
+npm install leaflet
+npm install -D @types/leaflet
+npm install react-leaflet
+		Use world-countries for country selection
+		create Map.tsx to add world map plugin to Step2. Location on RentModal. Add Marker on location
+	Step 3. Info
+		Update RentModal for step 3 info. Create Counter.tsx to create an input for info of property, such as bathroomCount, roomCount, guestCount.
+
+Day 9: Listing creation part 2
+	Step 4. Images
+		create inputs/ImageUpload.tsx and using cloudinary as CDN
+npm install next-cloudinary
+		update env for cloudinary CloudName, upload preset (remember to unsigned), update next.config.js
+	Step 5. Description and Prices
+		update RentModal and create axios post onSubmit api/listings/route.ts
+		connect mongoDB via route.ts
+
+Day 10: fetching listing with server component
+	Update page, create emptyState.tsx and return home
+	Create getlisting.ts to retrieve listing from database (no api required as it was server side)
+	Once listings is retrieve, now we fix the UI by creating ListingCard to display all the listings
+	ListingCard.tsx will be a modal that is reuse throughout reservation, favourites, my properties
+npm install date-fns
+	method - reservationDate, create heartButton.tsx for favourite functionality
+
+Day 11: Listing Favourite functionality
+	Create api/[listingId]/route.ts to favorite listing 
+	useFavourite.ts as a hook route to client side HeartButton 
+
+day 12: Individual Listing view
+	under ListingCard.tsx, we have route push onClick={() => router.push(`/listings/${data.id}`)} 
+	thus, page.tsx is created under /app/listings/[listingId] for individual listing page view
+	create action getListingById to page.tsx (server side database retrieve listing) then create ListingClient as Modal
+	ListingCient.tsx (create body content to ListingClient by components)
+	|- ListingHead.tsx (component display head of individual listing such as title/location/image with favorite)
+	|- ListingInfo.tsx (component display body of individual listing such as category, description, user , map)
+	   |-ListingCategory.tsx (component to display category such as icon, category description and label )
+	
+Day 13: Listing Reservation and Calendar (myTrip)
+npm install react-date-range
+npm install -D @types/react-date-range
+	create ListingReservation.tsx with Calendar.tsx for a calendar widget to user to select range of date
+		import Range from react-date-range for the date object
+		functionality to disabled past date and calculate in calendardate for prices 
+	create api/reservations/route.ts for API post the reservation date to prismadb reservations
+		update globals.css for calendar widget using react-date-range css components
+	create getReservation.ts to retrieve reservations from prismadb
+		update ListingClient, [listingId]/page.tsx, index.tsx for SafeListing type
+		it fetch reservations date to block out reserved date thus prevent duplicate date reserved
+	Ensure the date format is "PP" instead of "pp"
+	update the onClick function for mytrip under Navbar/UserMenu
+	create trips/page.tsx and TripsClient for MyTrip Page to display all trips booked or reserved
+		allow user to delete reservation by hook router to DELETE reservation	
+
+Day 14: Owner myReservation 
+	create app/reservation/page.tsx and ReservationClient.tsx for owner reservation page to view airbnb owner self resevation
+		allow owner to cancelled customer reservation, view all reservation by owner property
+	same as TripClient, using api/reservation/route.ts to DELETE reservation with hook to prismadb reservations
+	update userMenu click button for My Reservation
+
+Day 15: Update favoriteListings and PropertyListings
+	update userMenu button click
+	create app/favorites/FavoritesClient.tsx & page.tsx to display favorited listings by users
+	create action/getFavoriteListings.ts for client to fetch favorited listings
+	create app/properties/PropertiesClient.tsx & page.tsx to display properties that was hosted by users
+	update action/getListings.ts to pass in userId to fetch listings hosted by users, 
+	then update app/page.tsx to pass in searchParams object to ensure the getListing update work properly
+	create app/listings/[listingId]/route.ts for DELETE listings from user hosted listings under prismadb listing where userId = currentUser.Id
+
+Day 16: Implement Search functionality
+	create /modals/SearchModal.tsx (similar to rentModal) with enum STEPS to prompt user for search filter parameters
+	update layout.tsx to include SearchModal into the body
+	create useSearchModal.ts as hook to open and close SearchModal 
+	update navbar/Search.tsx for button functionality to open SearchModal for listing filters
+	update action/getListings.ts to include query parameters for all assigned filters (initially it get all listings and later updated for fetch listings hosted by users)
+	Filters include Location (map), dateRange (calendar) and parameters(guestCount, roomCount, bathroomCount)
+	
+	Implement loading.tsx
+npm install react-spinners
+	create app/loading.tsx and app/components/Loader.tsx to import react-spinner for PuffLoader effect
+	include PuffLoader icon while page under loading status
+
+	Implement error.tsx
+	create app/error.tsx to show error page
+
+	update search.tsx to show parameter and filters on the search bathroomCount
+
+	Implement middleware.ts on rootfiles to prevent users to get into the URL directly
